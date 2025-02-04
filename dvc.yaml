@@ -17,16 +17,16 @@ stages:
       - data/processed/transformed_data.npz
       - transformer.joblib
 
-  # interaction_data:
-  #   cmd: python collaborative_filtering.py
-  #   deps:
-  #     - data/raw/User Listening History.csv
-  #     - collaborative_filtering.py
-  #     - data/interim/cleaned_data.csv
-  #   outs:
-  #     - data/interim/track_ids.npy
-  #     - data/interim/collab_filtered_data.csv
-  #     - data/processed/interaction_matrix.npz
+  interaction_data:
+    cmd: python collaborative_filtering.py
+    deps:
+      - data/raw/User Listening History.csv
+      - collaborative_filtering.py
+      - data/interim/cleaned_data.csv
+    outs:
+      - data/interim/track_ids.npy
+      - data/interim/collab_filtered_data.csv
+      - data/processed/interaction_matrix.npz
 
   # transformed_filtered_data:
   #   cmd: python transform_filtered_data.py

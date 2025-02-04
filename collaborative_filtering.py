@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # output paths
 track_ids_save_path = "data/interim/track_ids.npy"
 filtered_data_save_path = "data/interim/collab_filtered_data.csv"
-interaction_matrix_save_path = "data/interaction_matrix.npz"
+interaction_matrix_save_path = "data/processed/interaction_matrix.npz"
 
 # input paths
 songs_data_path = "data/interim/cleaned_data.csv"
@@ -22,10 +22,13 @@ def filter_songs_data(
     """
     # filter data based on track_ids
     filtered_data = songs_data[songs_data["track_id"].isin(track_ids)]
+
     # sort the data by track id
     filtered_data.sort_values(by="track_id", inplace=True)
+
     # rest index
     filtered_data.reset_index(drop=True, inplace=True)
+
     # save the data
     save_pandas_data_to_csv(filtered_data, save_df_path)
 
@@ -49,21 +52,22 @@ def save_sparse_matrix(matrix: csr_matrix, file_path: str) -> None:
 def create_interaction_matrix(
     history_data: dd.DataFrame, track_ids_save_path, save_matrix_path
 ) -> csr_matrix:
+
     # make a copy of data
     df = history_data.copy()
 
     # convert the playcount column to float
-    df["playcount"] = df["playcount"].astype(np.float64)
+    df["playcount"] = df["playcount"].astype(np.int64)
 
     # convert string column to categorical
     df = df.categorize(columns=["user_id", "track_id"])
 
     # Convert user_id and track_id to numeric indices
-    user_mapping = df["user_id"].cat.codes
-    track_mapping = df["track_id"].cat.codes
+    user_mapping = df["user_id"].cat.codes   # user id's encoded values
+    track_mapping = df["track_id"].cat.codes # track id's ecnoded values
 
     # get the list of track_ids
-    track_ids = df["track_id"].cat.categories.values
+    track_ids = df["track_id"].cat.categories.values # track ids details 
 
     # save the categories
     np.save(track_ids_save_path, track_ids, allow_pickle=True)
@@ -145,7 +149,8 @@ def collaborative_recommendation(
 
 
 def main():
-    # load the history data
+
+    # load the user data via dask
     user_data = dd.read_csv(user_listening_history_data_path)
 
     # get the unique track ids
