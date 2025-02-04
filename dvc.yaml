@@ -28,10 +28,10 @@ stages:
       - data/interim/collab_filtered_data.csv
       - data/processed/interaction_matrix.npz
 
-  # transformed_filtered_data:
-  #   cmd: python transform_filtered_data.py
-  #   deps:
-  #     - transform_filtered_data.py
-  #     - data/interim/collab_filtered_data.csv
-  #   outs:
-  #     - data/processed/transformed_hybrid_data.npz
+  transformed_filtered_data:
+    cmd: python transform_filtered_data.py
+    deps:
+      - transform_filtered_data.py
+      - data/interim/collab_filtered_data.csv
+    outs:
+      - data/processed/transformed_hybrid_data.npz

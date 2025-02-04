@@ -19,10 +19,13 @@ class HybridRecommenderSystem:
         song_row = songs_data.loc[
             (songs_data["name"] == song_name) & (songs_data["artist"] == artist_name)
         ]
+        
         # get the index of song
         song_index = song_row.index[0]
+        
         # generate the input vector
         input_vector = transformed_matrix[song_index].reshape(1, -1)
+        
         # calculate similarity scores
         content_similarity_scores = cosine_similarity(input_vector, transformed_matrix)
         return content_similarity_scores
@@ -34,12 +37,16 @@ class HybridRecommenderSystem:
         song_row = songs_data.loc[
             (songs_data["name"] == song_name) & (songs_data["artist"] == artist_name)
         ]
+        
         # track_id of input song
         input_track_id = song_row["track_id"].values.item()
+        
         # index value of track_id
         ind = np.where(track_ids == input_track_id)[0].item()
+        
         # fetch the input vector
         input_array = interaction_matrix[ind]
+        
         # get similarity scores
         collaborative_similarity_scores = cosine_similarity(input_array, interaction_matrix)
         return collaborative_similarity_scores
