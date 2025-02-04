@@ -8,6 +8,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from data_cleaning import data_for_content_filtering
 from scipy.sparse import save_npz
+from pathlib import Path
 
 # Cleaned Data Path
 CLEANED_DATA_PATH = "data/interim/cleaned_data.csv"
@@ -66,7 +67,7 @@ def train_transformer(data):
     transformer.fit(data)
 
     # save the transformer
-    joblib.dump(transformer, "transformer.joblib")
+    joblib.dump(transformer, Path("models/transformer.joblib"))
 
 
 def transform_data(data):
@@ -78,7 +79,7 @@ def transform_data(data):
         array-like: The transformed data.
     """
     # load the transformer
-    transformer = joblib.load("transformer.joblib")
+    transformer = joblib.load(Path("models/transformer.joblib"))
 
     # transform the data
     transformed_data = transformer.transform(data)
@@ -132,30 +133,30 @@ def content_recommendation(song_name, artist_name, songs_data, transformed_data,
     """
     # convert song name to lowercase
     song_name = song_name.lower()
-    
+
     # convert the artist name to lowercase
     artist_name = artist_name.lower()
-    
+
     # filter out the song from data
     song_row = songs_data.loc[
         (songs_data["name"] == song_name) & (songs_data["artist"] == artist_name)
     ]
-    
+
     # get the index of song
     song_index = song_row.index[0]
-    
+
     # generate the input vector
     input_vector = transformed_data[song_index].reshape(1, -1)
-    
+
     # calculate similarity scores
     similarity_scores = calculate_similarity_scores(input_vector, transformed_data)
-    
+
     # get the top k songs
     top_k_songs_indexes = np.argsort(similarity_scores.ravel())[-k - 1 :][::-1]
-    
+
     # get the top k songs names
     top_k_songs_names = songs_data.iloc[top_k_songs_indexes]
-    
+
     # print the top k songs
     top_k_list = top_k_songs_names[["name", "artist", "spotify_preview_url"]].reset_index(
         drop=True
@@ -175,16 +176,16 @@ def main(data_path):
     """
     # load the data
     data = pd.read_csv(data_path)
-    
+
     # clean the data
     data_content_filtering = data_for_content_filtering(data)
-    
+
     # train the transformer
     train_transformer(data_content_filtering)
-    
+
     # transform the data
     transformed_data = transform_data(data_content_filtering)
-    
+
     # save transformed data
     save_transformed_data(transformed_data, "data/processed/transformed_data.npz")
 

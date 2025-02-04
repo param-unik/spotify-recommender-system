@@ -7,29 +7,52 @@ import pandas as pd
 from numpy import load
 
 
-# load the data
-cleaned_data_path = "data/interim/cleaned_data.csv"
-songs_data = pd.read_csv(cleaned_data_path)
+@st.cache_data
+def load_data():
 
-# load the transformed data
-transformed_data_path = "data/processed/transformed_data.npz"
-transformed_data = load_npz(transformed_data_path)
+    # load the data
+    cleaned_data_path = "data/interim/cleaned_data.csv"
+    songs_data = pd.read_csv(cleaned_data_path)
 
-# load the track ids
-track_ids_path = "data/interim/track_ids.npy"
-track_ids = load(track_ids_path, allow_pickle=True)
+    # load the transformed data
+    transformed_data_path = "data/processed/transformed_data.npz"
+    transformed_data = load_npz(transformed_data_path)
 
-# load the filtered songs data
-filtered_data_path = "data/interim/collab_filtered_data.csv"
-filtered_data = pd.read_csv(filtered_data_path)
+    # load the track ids
+    track_ids_path = "data/interim/track_ids.npy"
+    track_ids = load(track_ids_path, allow_pickle=True)
 
-# load the interaction matrix
-interaction_matrix_path = "data/processed/interaction_matrix.npz"
-interaction_matrix = load_npz(interaction_matrix_path)
+    # load the filtered songs data
+    filtered_data_path = "data/interim/collab_filtered_data.csv"
+    filtered_data = pd.read_csv(filtered_data_path)
 
-# load the transformed hybrid data
-transformed_hybrid_data_path = "data/processed/transformed_hybrid_data.npz"
-transformed_hybrid_data = load_npz(transformed_hybrid_data_path)
+    # load the interaction matrix
+    interaction_matrix_path = "data/processed/interaction_matrix.npz"
+    interaction_matrix = load_npz(interaction_matrix_path)
+
+    # load the transformed hybrid data
+    transformed_hybrid_data_path = "data/processed/transformed_hybrid_data.npz"
+    transformed_hybrid_data = load_npz(transformed_hybrid_data_path)
+
+    return (
+        songs_data,
+        transformed_data,
+        track_ids,
+        filtered_data,
+        interaction_matrix,
+        transformed_hybrid_data,
+    )
+
+
+# loading all then data first time
+(
+    songs_data,
+    transformed_data,
+    track_ids,
+    filtered_data,
+    interaction_matrix,
+    transformed_hybrid_data,
+) = load_data()
 
 # Title
 st.title("Welcome to the Spotify Song Recommender!")
@@ -39,7 +62,7 @@ st.write("### Enter the name of a song and the recommender will suggest similar 
 
 # Text Input
 # song_name = st.text_input("Enter a song name:")
-song_name = st.selectbox("Select a song name:", filtered_data["name"].unique())
+song_name = st.selectbox("Select a song name:", songs_data["name"].unique())
 st.write("You entered:", song_name.title())
 
 # lowercase the input
@@ -49,7 +72,7 @@ song_name = song_name.lower()
 # artist_name = st.text_input("Enter the artist name:")
 artist_name = st.selectbox(
     "Select an artist name:",
-    filtered_data[(filtered_data["name"] == song_name)]["artist"].unique(),
+    songs_data[(songs_data["name"] == song_name)]["artist"].unique(),
 )
 st.write("You entered:", artist_name.title())
 artist_name = artist_name.lower()
@@ -57,10 +80,24 @@ artist_name = artist_name.lower()
 # k recommndations
 k = st.selectbox("How many recommendations do you want?", [5, 10, 15, 20], index=0)
 
-filtering_type = st.selectbox(
-    "Select the type of filtering: ",
-    ["Content-Based Filtering", "Collaborative Filtering", "Hybrid Recommender System"],
-)
+
+# To Avoid cold start problem
+# we will use content based recommendation if selected songs dont have any active listener
+
+if ((songs_data["name"] == song_name) & (songs_data["artist"] == artist_name)).any():
+    if not ((filtered_data["name"] == song_name) & (filtered_data["artist"] == artist_name)).any():
+        st.write(
+            f":unicorn_face::rotating_light: **{song_name.title()}** by **{artist_name.title()}** dont have any active listener. Let me get you few others like this for you :singer:"
+        )
+        filtering_type = st.selectbox(
+            "Select the type of filtering: ",
+            ["Content-Based Filtering"],
+        )
+    else:
+        filtering_type = st.selectbox(
+            "Select the type of filtering: ",
+            ["Content-Based Filtering", "Collaborative Filtering", "Hybrid Recommender System"],
+        )
 
 # Button
 if filtering_type == "Content-Based Filtering":
@@ -143,7 +180,7 @@ elif filtering_type == "Hybrid Recommender System":
 
     # diversity slider
     diversity = st.slider(
-        label="Diversity in Recommendations", min_value=1, max_value=9, value=5, step=1
+        label="Diversity in Recommendations", min_value=0, max_value=10, value=5, step=1
     )
     content_based_weight = 1 - (diversity / 10)
 
@@ -153,7 +190,7 @@ elif filtering_type == "Hybrid Recommender System":
     )
 
     st.bar_chart(chart_data, x="type", y="ratio")
-    
+
     if st.button("Get Recommendations"):
         st.write("Recommendations for", f"**{song_name.title()}** by **{artist_name.title()}**")
         recommender = HybridRecommenderSystem(

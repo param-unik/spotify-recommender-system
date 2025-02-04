@@ -15,7 +15,7 @@ stages:
       - data_cleaning.py
     outs:
       - data/processed/transformed_data.npz
-      - transformer.joblib
+      - models/transformer.joblib
 
   interaction_data:
     cmd: python collaborative_filtering.py
